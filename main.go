@@ -1,16 +1,21 @@
 package main
 
 import (
+	"os"
+	"time"
+
 	"github.com/codegoalie/golibnotify"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sevlyar/go-daemon"
-	"os"
-	"time"
 )
 
 func main() {
-	logger := log.Output(zerolog.ConsoleWriter{Out: os.Stdout, FormatTimestamp: func(i interface{}) string { return "" }})
+	zerolog.TimeFieldFormat = time.TimeOnly
+	logger := log.Output(zerolog.ConsoleWriter{
+		Out:             os.Stdout,
+		FormatTimestamp: func(i interface{}) string { return "" },
+	})
 	if len(os.Args) < 2 {
 		logger.Fatal().Msg("Please provide duration")
 	}
@@ -30,13 +35,14 @@ func main() {
 		Umask: 027,
 		Args:  os.Args,
 	}
-
 	child, err := cntxt.Reborn()
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Couldn't start daemon")
 	}
 	if child != nil {
-		logger.Info().Int("pid", child.Pid).Msg("Success. Notification will be sent.")
+		logger.Info().
+			Int("pid", child.Pid).
+			Msg("Success. Notification will be sent.")
 		os.Exit(0)
 	}
 	defer cntxt.Release()
@@ -47,6 +53,6 @@ func main() {
 	}
 	err = n.Update(summary, text, "")
 	if err != nil {
-		logger.Panic().Msg("Couldn't send notification")
+		logger.Fatal().Msg("Couldn't send notification")
 	}
 }
